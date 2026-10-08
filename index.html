@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="寻流 SeekFlow 是一个免 API Key 的多源信息检索工具，同时搜索中文维基百科、GitHub、OpenAlex 和 Hacker News。"
+    />
+    <meta name="theme-color" content="#f4f1e8" />
+    <title>寻流 SeekFlow · 多源信息检索</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#results-section">跳到检索结果</a>
+    <div class="page-glow page-glow-one" aria-hidden="true"></div>
+    <div class="page-glow page-glow-two" aria-hidden="true"></div>
+
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="寻流 SeekFlow 首页">
+        <span class="brand-mark" aria-hidden="true">
+          <span></span><span></span><span></span>
+        </span>
+        <span class="brand-copy">
+          <strong>寻流</strong>
+          <small>SeekFlow</small>
+        </span>
+      </a>
+      <div class="header-meta">
+        <span class="header-note"><span class="live-dot" aria-hidden="true"></span>4 个公开数据源</span>
+        <button class="quiet-button" id="clear-all-button" type="button">清空本地数据</button>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow"><span>OPEN WEB RESEARCH</span><span class="eyebrow-line"></span></p>
+          <h1 id="hero-title">把分散的信息，<br /><em>汇成一条清晰的线索。</em></h1>
+          <p class="hero-intro">
+            一次输入，同时查找百科知识、开源项目、学术论文与技术讨论。不需要账号，也不需要 API Key。
+          </p>
+        </div>
+
+        <form class="search-console" id="search-form" novalidate>
+          <label class="sr-only" for="search-input">输入要查找的关键词</label>
+          <div class="search-bar">
+            <span class="search-symbol" aria-hidden="true"></span>
+            <input
+              id="search-input"
+              name="query"
+              type="search"
+              maxlength="160"
+              autocomplete="off"
+              placeholder="例如：本地大模型、量子计算、视频自动剪辑…"
+              aria-describedby="search-help"
+            />
+            <button class="search-button" id="search-button" type="submit">
+              <span>开始寻找</span>
+              <span aria-hidden="true">↗</span>
+            </button>
+          </div>
+          <p class="search-help" id="search-help">关键词会发送给你勾选的公开数据源；收藏与历史仅保存在本浏览器。</p>
+
+          <div class="source-heading">
+            <span>选择信息流</span>
+            <button id="toggle-sources-button" type="button">取消全选</button>
+          </div>
+
+          <fieldset class="source-grid" id="source-fieldset">
+            <legend class="sr-only">选择要检索的数据源</legend>
+            <label class="source-option" data-source-card="wikipedia">
+              <input type="checkbox" name="sources" value="wikipedia" checked />
+              <span class="source-check" aria-hidden="true"></span>
+              <span class="source-icon source-icon-wikipedia" aria-hidden="true">维</span>
+              <span class="source-copy">
+                <strong>中文维基百科</strong>
+                <small>概念与背景知识</small>
+              </span>
+              <span class="source-status" id="status-wikipedia" data-state="idle">待命</span>
+            </label>
+
+            <label class="source-option" data-source-card="github">
+              <input type="checkbox" name="sources" value="github" checked />
+              <span class="source-check" aria-hidden="true"></span>
+              <span class="source-icon source-icon-github" aria-hidden="true">GH</span>
+              <span class="source-copy">
+                <strong>GitHub</strong>
+                <small>开源仓库与工具</small>
+              </span>
+              <span class="source-status" id="status-github" data-state="idle">待命</span>
+            </label>
+
+            <label class="source-option" data-source-card="openalex">
+              <input type="checkbox" name="sources" value="openalex" checked />
+              <span class="source-check" aria-hidden="true"></span>
+              <span class="source-icon source-icon-openalex" aria-hidden="true">OA</span>
+              <span class="source-copy">
+                <strong>OpenAlex</strong>
+                <small>学术论文与研究</small>
+              </span>
+              <span class="source-status" id="status-openalex" data-state="idle">待命</span>
+            </label>
+
+            <label class="source-option" data-source-card="hackernews">
+              <input type="checkbox" name="sources" value="hackernews" checked />
+              <span class="source-check" aria-hidden="true"></span>
+              <span class="source-icon source-icon-hackernews" aria-hidden="true">Y</span>
+              <span class="source-copy">
+                <strong>Hacker News</strong>
+                <small>技术新闻与讨论</small>
+              </span>
+              <span class="source-status" id="status-hackernews" data-state="idle">待命</span>
+            </label>
+          </fieldset>
+
+          <div class="suggestions" aria-label="搜索示例">
+            <span>试试搜索</span>
+            <button type="button" data-suggestion="开源 AI 视频剪辑">开源 AI 视频剪辑</button>
+            <button type="button" data-suggestion="本地运行大语言模型">本地运行大语言模型</button>
+            <button type="button" data-suggestion="人工智能医疗">人工智能医疗</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="workspace" aria-label="检索工作区">
+        <section class="results-panel" id="results-section" aria-labelledby="results-title">
+          <header class="section-header">
+            <div>
+              <p class="section-kicker">DISCOVERY STREAM</p>
+              <h2 id="results-title">检索结果</h2>
+            </div>
+            <p class="result-summary" id="result-summary" aria-live="polite">输入关键词，从多个来源开始寻找。
+            </p>
+          </header>
+
+          <div class="filter-bar" id="filter-bar" aria-label="按来源筛选" hidden></div>
+
+          <div class="empty-state" id="empty-state">
+            <div class="empty-visual" aria-hidden="true">
+              <span></span><span></span><span></span><span></span>
+            </div>
+            <h3>线索还在等待出发</h3>
+            <p>选择信息源并输入关键词，结果会被整理成统一的信息卡片。</p>
+          </div>
+
+          <div class="loading-list" id="loading-list" hidden aria-hidden="true">
+            <div class="loading-card"><span></span><span></span><span></span></div>
+            <div class="loading-card"><span></span><span></span><span></span></div>
+            <div class="loading-card"><span></span><span></span><span></span></div>
+          </div>
+
+          <div class="results-list" id="results-list" aria-live="polite"></div>
+        </section>
+
+        <aside class="library-panel" aria-label="个人信息架">
+          <section class="library-card">
+            <header>
+              <div>
+                <span class="library-index">01</span>
+                <h2>最近寻找</h2>
+              </div>
+              <button class="text-button" id="clear-history-button" type="button">清空</button>
+            </header>
+            <div class="mini-list" id="history-list"></div>
+          </section>
+
+          <section class="library-card">
+            <header>
+              <div>
+                <span class="library-index">02</span>
+                <h2>收藏线索 <span class="count-badge" id="favorites-count">0</span></h2>
+              </div>
+              <button class="text-button" id="export-favorites-button" type="button">导出 JSON</button>
+            </header>
+            <div class="mini-list" id="favorites-list"></div>
+            <button class="clear-favorites-button" id="clear-favorites-button" type="button">清空收藏</button>
+          </section>
+
+          <section class="privacy-card">
+            <span class="privacy-mark" aria-hidden="true">◎</span>
+            <div>
+              <strong>本地记忆，随时可清空</strong>
+              <p>寻流没有后端数据库。收藏和历史仅写入浏览器 localStorage。</p>
+            </div>
+          </section>
+        </aside>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p><strong>寻流 SeekFlow</strong> · 从公开信息中，找到下一条线索。</p>
+      <p>结果来自第三方公开 API，请在采信前核对原始页面。</p>
+    </footer>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+  </body>
+</html>
